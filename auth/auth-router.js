@@ -1,22 +1,6 @@
 const bc = require("bcryptjs");
-
 const router = require("express").Router();
-
 const Users = require("../users/users-model.js");
-
-router.get("/secret", (req, res, next) => {
-  if (req.headers.authorization) {
-    bc.hash(req.headers.authorization, 8, (err, hash) => {
-      if (err) {
-        res.status(500).json({ error: "Unauthorized request" });
-      } else {
-        res.status(200).json({ hash });
-      }
-    });
-  } else {
-    res.status(400).json({ error: "Header not found" });
-  }
-});
 
 router.post("/register", (req, res) => {
   let user = req.body;
@@ -39,6 +23,8 @@ router.post("/login", (req, res) => {
     .first()
     .then(user => {
       if (user && bc.compareSync(password, user.password)) {
+        req.session.loggedIn = true;
+        req.session.userId = user.id;
         res.status(200).json({ message: `Welcome ${user.username}!` });
       } else {
         res.status(401).json({ message: "Invalid Credentials" });
@@ -47,6 +33,22 @@ router.post("/login", (req, res) => {
     .catch(error => {
       res.status(500).json(error);
     });
+});
+
+router.get("/logout", (req, res) => {
+  if (req.sesson) {
+    req.session.destroy(err => {
+      if (err) {
+        res.status(500).json({
+          you: "can checkout any time you like, but you can never leave!"
+        });
+      } else {
+        res.status(200).json({ bye: "thanks for playing" });
+      }
+    });
+  } else {
+    res.status(204);
+  }
 });
 
 module.exports = router;
